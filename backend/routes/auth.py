@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlmodel import Session
+from sqlmodel import Session, select
 from typing import Optional
 import jwt
 from datetime import datetime, timedelta
@@ -41,7 +41,7 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 def authenticate_user(session: Session, email: str, password: str) -> Optional[User]:
-    user = session.query(User).filter(User.email == email).first()
+    user = session.exec(select(User).where(User.email == email)).first()
     if not user or not verify_password(password, user.password):
         return None
     return user
@@ -79,7 +79,7 @@ def get_current_user(request: Request, session: Session = Depends(get_session)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user = session.query(User).filter(User.email == email).first()
+    user = session.exec(select(User).where(User.email == email)).first()
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -92,7 +92,7 @@ def get_current_user(request: Request, session: Session = Depends(get_session)):
 @router.post("/auth/register", response_model=dict)
 def register(user: UserCreate, session: Session = Depends(get_session)):
     # Check if user already exists
-    existing_user = session.query(User).filter(User.email == user.email).first()
+    existing_user = session.exec(select(User).where(User.email == user.email)).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -119,10 +119,18 @@ def register(user: UserCreate, session: Session = Depends(get_session)):
         data={"sub": db_user.email}, expires_delta=access_token_expires
     )
     
+    user_data = {
+        "id": str(db_user.id),
+        "email": db_user.email,
+        "name": db_user.name,
+        "created_at": db_user.created_at.isoformat() if db_user.created_at else None,
+        "updated_at": db_user.updated_at.isoformat() if db_user.updated_at else None
+    }
+    
     return {
         "success": True,
         "data": {
-            "user": UserRead.model_validate(db_user),
+            "user": user_data,
             "token": access_token
         }
     }
@@ -142,10 +150,18 @@ def login(credentials: UserLogin, session: Session = Depends(get_session)):
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     
+    user_data = {
+        "id": str(user.id),
+        "email": user.email,
+        "name": user.name,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "updated_at": user.updated_at.isoformat() if user.updated_at else None
+    }
+    
     return {
         "success": True,
         "data": {
-            "user": UserRead.model_validate(user),
+            "user": user_data,
             "token": access_token
         }
     }

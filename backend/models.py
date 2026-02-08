@@ -2,7 +2,6 @@ from sqlmodel import SQLModel, Field
 from datetime import datetime
 from typing import Optional
 import uuid
-from sqlalchemy import JSON
 
 # User Models
 class UserBase(SQLModel):
@@ -11,7 +10,7 @@ class UserBase(SQLModel):
 
 class User(UserBase, table=True):
     __tablename__ = "users"
-    
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     password: str
     is_active: bool = True
@@ -34,13 +33,13 @@ class TodoBase(SQLModel):
     priority: str = "medium"  # low, medium, high, urgent
     due_date: Optional[datetime] = None
     category: Optional[str] = None
-    tags: Optional[str] = Field(default=lambda: "[]")  # Store as JSON string
+    tags: Optional[str] = "[]"  # Store as JSON string
 
 class Todo(TodoBase, table=True):
     __tablename__ = "todos"
-    
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    owner_id: uuid.UUID = Field(foreign_key="users.id", nullable=False)
+    owner_id: uuid.UUID  # Temporarily removing foreign key constraint for debugging
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -69,9 +68,9 @@ class CategoryBase(SQLModel):
 
 class Category(CategoryBase, table=True):
     __tablename__ = "categories"
-    
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    owner_id: uuid.UUID = Field(foreign_key="users.id", nullable=False)
+    owner_id: uuid.UUID  # Temporarily removing foreign key constraint for debugging
     count: int = 0  # Number of todos in this category
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

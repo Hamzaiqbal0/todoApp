@@ -78,10 +78,27 @@ def get_todos(
     
     total = session.exec(count_query).count()
     
+    # Convert todos to dictionaries
+    todos_dict = []
+    for todo in todos:
+        todos_dict.append({
+            "id": str(todo.id),
+            "title": todo.title,
+            "description": todo.description,
+            "completed": todo.completed,
+            "priority": todo.priority,
+            "due_date": todo.due_date.isoformat() if todo.due_date else None,
+            "category": todo.category,
+            "tags": todo.tags,
+            "owner_id": str(todo.owner_id),
+            "created_at": todo.created_at.isoformat() if todo.created_at else None,
+            "updated_at": todo.updated_at.isoformat() if todo.updated_at else None
+        })
+    
     return {
         "success": True,
         "data": {
-            "todos": todos_read,
+            "todos": todos_dict,
             "pagination": {
                 "page": page,
                 "limit": limit,
@@ -106,10 +123,24 @@ def get_todo(id: str, current_user: User = Depends(get_current_user), session: S
     if todo.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this todo")
     
+    todo_data = {
+        "id": str(todo.id),
+        "title": todo.title,
+        "description": todo.description,
+        "completed": todo.completed,
+        "priority": todo.priority,
+        "due_date": todo.due_date.isoformat() if todo.due_date else None,
+        "category": todo.category,
+        "tags": todo.tags,
+        "owner_id": str(todo.owner_id),
+        "created_at": todo.created_at.isoformat() if todo.created_at else None,
+        "updated_at": todo.updated_at.isoformat() if todo.updated_at else None
+    }
+    
     return {
         "success": True,
         "data": {
-            "todo": TodoRead.model_validate(todo)
+            "todo": todo_data
         }
     }
 
@@ -122,10 +153,24 @@ def create_todo(todo: TodoCreate, current_user: User = Depends(get_current_user)
     session.commit()
     session.refresh(db_todo)
     
+    todo_data = {
+        "id": str(db_todo.id),
+        "title": db_todo.title,
+        "description": db_todo.description,
+        "completed": db_todo.completed,
+        "priority": db_todo.priority,
+        "due_date": db_todo.due_date.isoformat() if db_todo.due_date else None,
+        "category": db_todo.category,
+        "tags": db_todo.tags,
+        "owner_id": str(db_todo.owner_id),
+        "created_at": db_todo.created_at.isoformat() if db_todo.created_at else None,
+        "updated_at": db_todo.updated_at.isoformat() if db_todo.updated_at else None
+    }
+    
     return {
         "success": True,
         "data": {
-            "todo": TodoRead.model_validate(db_todo)
+            "todo": todo_data
         }
     }
 
@@ -153,10 +198,24 @@ def update_todo(id: str, todo_update: TodoUpdate, current_user: User = Depends(g
     session.commit()
     session.refresh(db_todo)
     
+    todo_data = {
+        "id": str(db_todo.id),
+        "title": db_todo.title,
+        "description": db_todo.description,
+        "completed": db_todo.completed,
+        "priority": db_todo.priority,
+        "due_date": db_todo.due_date.isoformat() if db_todo.due_date else None,
+        "category": db_todo.category,
+        "tags": db_todo.tags,
+        "owner_id": str(db_todo.owner_id),
+        "created_at": db_todo.created_at.isoformat() if db_todo.created_at else None,
+        "updated_at": db_todo.updated_at.isoformat() if db_todo.updated_at else None
+    }
+    
     return {
         "success": True,
         "data": {
-            "todo": TodoRead.model_validate(db_todo)
+            "todo": todo_data
         }
     }
 
@@ -183,10 +242,24 @@ def toggle_todo(id: str, current_user: User = Depends(get_current_user), session
     session.commit()
     session.refresh(db_todo)
     
+    todo_data = {
+        "id": str(db_todo.id),
+        "title": db_todo.title,
+        "description": db_todo.description,
+        "completed": db_todo.completed,
+        "priority": db_todo.priority,
+        "due_date": db_todo.due_date.isoformat() if db_todo.due_date else None,
+        "category": db_todo.category,
+        "tags": db_todo.tags,
+        "owner_id": str(db_todo.owner_id),
+        "created_at": db_todo.created_at.isoformat() if db_todo.created_at else None,
+        "updated_at": db_todo.updated_at.isoformat() if db_todo.updated_at else None
+    }
+    
     return {
         "success": True,
         "data": {
-            "todo": TodoRead.model_validate(db_todo)
+            "todo": todo_data
         }
     }
 
