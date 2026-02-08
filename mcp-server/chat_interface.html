@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Todo Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .chat-container {
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+        .message {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .typing-indicator {
+            display: none;
+            padding: 10px 15px;
+            background-color: #f3f4f6;
+            border-radius: 20px;
+            margin: 10px 0;
+        }
+        .user-message {
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+        }
+        .ai-message {
+            background-color: #f3f4f6;
+            border-radius: 18px 18px 18px 4px;
+        }
+        .suggestion-chip {
+            background-color: #e0e7ff;
+            color: #4f46e5;
+            border-radius: 16px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .suggestion-chip:hover {
+            background-color: #c7d2fe;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-robot text-2xl"></i>
+                    <h1 class="text-xl font-bold">AI Todo Assistant</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="user-info" class="font-medium">Guest User</span>
+                    <button id="logout-btn" class="bg-white text-blue-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition duration-200">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-6 max-w-4xl">
+        <!-- Chat Container -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-[calc(100vh-120px)]">
+            <!-- Chat Header -->
+            <div class="bg-gray-50 px-6 py-4 border-b">
+                <h2 class="text-lg font-semibold text-gray-800">Your Personal Todo Assistant</h2>
+                <p class="text-sm text-gray-600">Ask me anything about your tasks using natural language</p>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chat-messages" class="chat-container p-6 space-y-4">
+                <div class="message ai-message p-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="bg-purple-500 text-white p-2 rounded-full">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">AI Assistant</p>
+                            <p class="mt-1">Hello! I'm your AI Todo Assistant. You can ask me to create, update, or manage your tasks using natural language. Try saying:</p>
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                <span class="suggestion-chip" onclick="sendSuggestion('Add a task to buy groceries')">Add a task to buy groceries</span>
+                                <span class="suggestion-chip" onclick="sendSuggestion('Show my tasks')">Show my tasks</span>
+                                <span class="suggestion-chip" onclick="sendSuggestion('Mark task 1 as complete')">Mark task 1 as complete</span>
+                                <span class="suggestion-chip" onclick="sendSuggestion('What are my high priority tasks?')">What are my high priority tasks?</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div id="typing-indicator" class="typing-indicator flex items-center">
+                <div class="flex space-x-1">
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+                </div>
+                <span class="ml-2">AI Assistant is thinking...</span>
+            </div>
+
+            <!-- Input Area -->
+            <div class="border-t bg-gray-50 p-4">
+                <div class="flex space-x-3">
+                    <input 
+                        type="text" 
+                        id="user-input"
+                        placeholder="Ask me to manage your tasks..." 
+                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onkeypress="handleKeyPress(event)"
+                    />
+                    <button 
+                        onclick="sendMessage()"
+                        class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition duration-200"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Send</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API configuration
+        const API_BASE_URL = 'http://localhost:8001'; // MCP server URL
+        
+        // Add message to chat
+        function addMessage(role, content) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message p-4`;
+            
+            const icon = role === 'user' ? 'fa-user' : 'fa-robot';
+            const roleName = role === 'user' ? 'You' : 'AI Assistant';
+            
+            messageDiv.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="bg-${role === 'user' ? 'blue' : 'purple'}-500 text-white p-2 rounded-full">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium">${roleName}</p>
+                        <p class="mt-1">${content}</p>
+                    </div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            document.getElementById('typing-indicator').style.display = 'flex';
+            document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+        }
+        
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            document.getElementById('typing-indicator').style.display = 'none';
+        }
+        
+        // Send message to AI agent
+        async function sendMessage() {
+            const inputElement = document.getElementById('user-input');
+            const message = inputElement.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessage('user', message);
+            inputElement.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // In a real implementation, this would call the AI agent
+                // For now, we'll simulate a response
+                setTimeout(async () => {
+                    // In a real implementation, we would call the AI agent API
+                    // const response = await callAiAgent(message);
+                    const response = await simulateAiResponse(message);
+                    
+                    // Hide typing indicator
+                    hideTypingIndicator();
+                    
+                    // Add AI response to chat
+                    addMessage('ai', response);
+                }, 1000); // Simulate processing time
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('ai', 'Sorry, I encountered an error processing your request. Please try again.');
+                console.error('Error sending message:', error);
+            }
+        }
+        
+        // Simulate AI response (in real implementation, this would call the AI agent)
+        async function simulateAiResponse(message) {
+            // This is where we would actually call the AI agent
+            // For simulation, we'll return appropriate responses based on keywords
+            message = message.toLowerCase();
+            
+            if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
+                return "Hello there! How can I help you manage your tasks today?";
+            } else if (message.includes('add') || message.includes('create') || message.includes('new task')) {
+                return "I've added a new task for you. What else would you like to do?";
+            } else if (message.includes('show') || message.includes('list') || message.includes('my tasks')) {
+                return "Here are your tasks: 1. Buy groceries (medium priority) 2. Finish report (high priority) 3. Call mom (low priority)";
+            } else if (message.includes('complete') || message.includes('done') || message.includes('finish')) {
+                return "I've marked that task as complete. Great job!";
+            } else if (message.includes('delete') || message.includes('remove')) {
+                return "I've removed that task from your list.";
+            } else if (message.includes('priority') || message.includes('important')) {
+                return "I can help you set priorities. The most important tasks should be marked as high or urgent priority.";
+            } else if (message.includes('help') || message.includes('what can you do')) {
+                return "I can help you manage your tasks! You can ask me to: add tasks, show your tasks, mark tasks as complete, delete tasks, set priorities, and more.";
+            } else {
+                return "I understand you want to manage your tasks. Could you be more specific? For example, you can say 'Add a task to...', 'Show my tasks', or 'Mark task as complete'.";
+            }
+        }
+        
+        // Call AI agent (this would be the real implementation)
+        async function callAiAgent(message) {
+            try {
+                // This would call the actual AI agent endpoint
+                // const response = await fetch(`${API_BASE_URL}/agent/process`, {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     },
+                //     body: JSON.stringify({
+                //         message: message,
+                //         userId: getCurrentUserId() // Would need to implement auth
+                //     })
+                // });
+                // 
+                // const data = await response.json();
+                // return data.response;
+                
+                // For now, return the simulated response
+                return await simulateAiResponse(message);
+            } catch (error) {
+                console.error('Error calling AI agent:', error);
+                return "Sorry, I'm having trouble connecting to the AI service. Please try again.";
+            }
+        }
+        
+        // Handle Enter key press
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // Send suggestion
+        function sendSuggestion(text) {
+            document.getElementById('user-input').value = text;
+            sendMessage();
+        }
+        
+        // Get current user ID (would be from auth in real implementation)
+        function getCurrentUserId() {
+            // In a real implementation, this would return the authenticated user's ID
+            return 'user123';
+        }
+        
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to logout?')) {
+                // In a real implementation, this would call the logout API
+                alert('Logged out successfully');
+                // Redirect to login page or clear session
+            }
+        });
+        
+        // Set user info (would be from auth in real implementation)
+        document.getElementById('user-info').textContent = 'Demo User';
+    </script>
+</body>
+</html>

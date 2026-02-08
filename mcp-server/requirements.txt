@@ -1,0 +1,13 @@
+mcp
+fastapi
+uvicorn[standard]
+sqlmodel
+asyncpg
+pydantic
+python-dotenv
+better-exceptions
+python-multipart
+passlib[bcrypt]
+python-jose[cryptography]
+openai
+pyjwt
