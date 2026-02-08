@@ -399,31 +399,61 @@
     </div>
 
     <!-- Chatbot Container -->
-    <div class="chatbot-container">
-        <div class="chatbot-icon" onclick="toggleChatbot()">
-            <i class="fas fa-robot text-2xl"></i>
+    <div id="chatbot-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 10000; font-family: 'Poppins', sans-serif;">
+        <div id="chatbot-icon" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); transition: all 0.3s ease; font-size: 24px;" onclick="toggleChatbot()">
+            <i class="fas fa-robot"></i>
         </div>
-        <div class="chatbot-popup" id="chatbot-popup">
-            <div class="chatbot-header">
-                <h3>AI Todo Assistant</h3>
-                <button onclick="toggleChatbot()" class="text-white">
-                    <i class="fas fa-times"></i>
-                </button>
+        <div id="chatbot-popup" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); flex-direction: column; overflow: hidden; animation: slideUp 0.3s ease; font-family: 'Poppins', sans-serif;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 1.2em;">AI Todo Assistant</h3>
+                <button onclick="toggleChatbot()" style="background: none; border: none; color: white; font-size: 1.5em; cursor: pointer;">×</button>
             </div>
-            <div class="chatbot-messages" id="chatbot-messages">
-                <div class="message ai-message">
+            <div id="chatbot-messages" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: white;">
+                <div class="message ai-message" style="max-width: 80%; padding: 10px 15px; border-radius: 18px; background-color: #f3f4f6; color: #374151; align-self: flex-start; border-radius: 18px 18px 18px 4px; animation: fadeIn 0.3s ease;">
                     Hello! I'm your AI Todo Assistant. Ask me to manage your tasks using natural language.
                 </div>
             </div>
-            <div class="typing-indicator" id="typing-indicator">
-                <i class="fas fa-circle-notch fa-spin mr-2"></i> AI is thinking...
+            <div id="typing-indicator" style="display: none; padding: 10px 15px; background-color: #f3f4f6; border-radius: 20px; margin: 5px 0; align-self: flex-start; font-style: italic; color: #6b7280;">
+                <i class="fas fa-circle-notch fa-spin" style="margin-right: 10px;"></i> AI is thinking...
             </div>
-            <div class="chatbot-input">
-                <input type="text" id="chatbot-input" placeholder="Ask me to manage your tasks..." onkeypress="handleChatInput(event)">
-                <button onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+            <div style="display: flex; padding: 15px; background: white; border-top: 1px solid #e5e7eb;">
+                <input type="text" id="chatbot-input" placeholder="Ask me to manage your tasks..." style="flex: 1; padding: 10px 15px; border: 1px solid #d1d5db; border-radius: 20px; outline: none;" onkeypress="handleChatInput(event)">
+                <button onclick="sendChatMessage()" style="margin-left: 10px; padding: 10px 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 20px; cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
+    
+    <style>
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background-color: #3b82f6 !important;
+            color: white !important;
+            align-self: flex-end !important;
+            border-radius: 18px 18px 4px 18px !important;
+        }
+        
+        .ai-message {
+            background-color: #f3f4f6 !important;
+            color: #374151 !important;
+            align-self: flex-start !important;
+            border-radius: 18px 18px 18px 4px !important;
+        }
+    </style>
 
     <footer class="mt-12 text-center text-blue-100 text-sm">
         <p>© 2026 TodoPro. All rights reserved. | Organize your life efficiently</p>
@@ -866,10 +896,166 @@
         // Chatbot functionality
         function toggleChatbot() {
             const popup = document.getElementById('chatbot-popup');
-            if (popup.style.display === 'flex') {
+            if (popup.style.display === 'flex' || popup.style.display === '') {
                 popup.style.display = 'none';
             } else {
                 popup.style.display = 'flex';
+            }
+        }
+        
+        function addChatMessage(role, content) {
+            const messagesContainer = document.getElementById('chatbot-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+            messageDiv.style.maxWidth = '80%';
+            messageDiv.style.padding = '10px 15px';
+            messageDiv.style.borderRadius = '18px';
+            messageDiv.style.marginBottom = '10px';
+            messageDiv.style.animation = 'fadeIn 0.3s ease';
+            messageDiv.textContent = content;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function showTypingIndicator() {
+            document.getElementById('typing-indicator').style.display = 'block';
+            document.getElementById('chatbot-messages').scrollTop = document.getElementById('chatbot-messages').scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            document.getElementById('typing-indicator').style.display = 'none';
+        }
+        
+        function handleChatInput(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+        
+        function sendChatMessage() {
+            const inputElement = document.getElementById('chatbot-input');
+            const message = inputElement.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addChatMessage('user', message);
+            inputElement.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Simulate AI response after a delay
+            setTimeout(() => {
+                hideTypingIndicator();
+                const response = processChatMessage(message);
+                addChatMessage('ai', response);
+            }, 1000);
+        }
+        
+        function processChatMessage(message) {
+            const lowerMsg = message.toLowerCase();
+            
+            // Process different commands
+            if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
+                return "Hello! How can I help you manage your tasks today?";
+            } else if (lowerMsg.includes('add') || lowerMsg.includes('create') || lowerMsg.includes('new task')) {
+                // Extract task details
+                const taskMatch = message.match(/(?:add|create|new)\s+(?:a\s+)?(?:task|todo|item)\s+to\s+(.+)/i);
+                if (taskMatch) {
+                    const taskTitle = taskMatch[1];
+                    if (currentUser) {
+                        const newTodo = {
+                            id: 'todo_' + Date.now(),
+                            title: taskTitle,
+                            description: "",
+                            completed: false,
+                            priority: "medium",
+                            due_date: null,
+                            category: "",
+                            tags: [],
+                            owner_id: currentUser.id,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        };
+                        
+                        allTodos.push(newTodo);
+                        localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(allTodos));
+                        loadTodos(); // Update the main task list
+                        
+                        return `I've added "${taskTitle}" to your tasks. You now have ${allTodos.length} tasks.`;
+                    } else {
+                        return "Please log in first to add tasks.";
+                    }
+                }
+                return "What task would you like to add?";
+            } else if (lowerMsg.includes('show') || lowerMsg.includes('list') || lowerMsg.includes('my tasks')) {
+                if (allTodos.length === 0) {
+                    return "You don't have any tasks yet. Add some tasks first!";
+                }
+                
+                let response = "Here are your tasks:\n";
+                allTodos.slice(0, 5).forEach((todo, index) => {
+                    response += `${index + 1}. ${todo.title} (${todo.priority}) - ${todo.completed ? '✓ Done' : '○ Pending'}\n`;
+                });
+                
+                if (allTodos.length > 5) {
+                    response += `\n... and ${allTodos.length - 5} more tasks.`;
+                }
+                
+                return response;
+            } else if (lowerMsg.includes('complete') || lowerMsg.includes('done') || lowerMsg.includes('finish')) {
+                // Find task to mark as complete
+                const taskTitle = lowerMsg.replace(/.*(complete|done|finish)\s+(.*)/i, '$2').trim();
+                
+                if (taskTitle) {
+                    const todoIndex = allTodos.findIndex(todo => 
+                        todo.title.toLowerCase().includes(taskTitle.toLowerCase())
+                    );
+                    
+                    if (todoIndex !== -1) {
+                        allTodos[todoIndex].completed = true;
+                        allTodos[todoIndex].updated_at = new Date().toISOString();
+                        localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(allTodos));
+                        loadTodos(); // Update the main task list
+                        
+                        return `I've marked "${allTodos[todoIndex].title}" as complete!`;
+                    } else {
+                        return `I couldn't find a task with "${taskTitle}". Here are your tasks: ${allTodos.map(t => t.title).join(', ')}`;
+                    }
+                }
+                return "Which task would you like to mark as complete?";
+            } else if (lowerMsg.includes('delete') || lowerMsg.includes('remove')) {
+                // Find task to delete
+                const taskTitle = lowerMsg.replace(/.*(delete|remove)\s+(.*)/i, '$2').trim();
+                
+                if (taskTitle) {
+                    const todoIndex = allTodos.findIndex(todo => 
+                        todo.title.toLowerCase().includes(taskTitle.toLowerCase())
+                    );
+                    
+                    if (todoIndex !== -1) {
+                        const deletedTitle = allTodos[todoIndex].title;
+                        allTodos.splice(todoIndex, 1);
+                        localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(allTodos));
+                        loadTodos(); // Update the main task list
+                        
+                        return `I've removed "${deletedTitle}" from your tasks.`;
+                    } else {
+                        return `I couldn't find a task with "${taskTitle}". Here are your tasks: ${allTodos.map(t => t.title).join(', ')}`;
+                    }
+                }
+                return "Which task would you like to delete?";
+            } else if (lowerMsg.includes('stats') || lowerMsg.includes('statistics') || lowerMsg.includes('how many')) {
+                const total = allTodos.length;
+                const completed = allTodos.filter(todo => todo.completed).length;
+                const pending = total - completed;
+                
+                return `You have ${total} tasks in total: ${completed} completed, ${pending} pending.`;
+            } else if (lowerMsg.includes('help') || lowerMsg.includes('what can you do')) {
+                return "I can help you manage your tasks! You can ask me to: add tasks, show your tasks, mark tasks as complete, delete tasks, and more. Try saying 'Add a task to buy groceries' or 'Show my tasks'.";
+            } else {
+                return "I understand you want to manage your tasks. Could you be more specific? For example, you can say 'Add a task to...', 'Show my tasks', or 'Mark task as complete'.";
             }
         }
         
