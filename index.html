@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TodoPro - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .card {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .todo-item {
+            transition: all 0.3s ease;
+        }
+        .completed {
+            opacity: 0.7;
+        }
+        .completed .todo-title {
+            text-decoration: line-through;
+        }
+        .priority-high { color: #e53e3e; }
+        .priority-medium { color: #d69e2e; }
+        .priority-low { color: #38a169; }
+        .priority-urgent { color: #c53030; }
+        .nav-link {
+            position: relative;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background-color: white;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 80%;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation Bar -->
+    <nav class="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-tasks text-2xl"></i>
+                    <h1 class="text-xl font-bold">TodoPro</h1>
+                </div>
+                
+                <div class="hidden md:flex space-x-1">
+                    <a href="index.html" class="nav-link active">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="all-tasks.html" class="nav-link">
+                        <i class="fas fa-tasks mr-2"></i>All Tasks
+                    </a>
+                    <a href="analytics.html" class="nav-link">
+                        <i class="fas fa-chart-bar mr-2"></i>Analytics
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div id="user-info" class="hidden flex items-center space-x-2">
+                        <span id="username-display" class="font-medium"></span>
+                        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm transition duration-200">
+                            <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                        </button>
+                    </div>
+                    <button id="login-btn" onclick="showLoginModal()" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition duration-200">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 shadow-md card">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                        <i class="fas fa-tasks text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Total Tasks</p>
+                        <p class="text-2xl font-bold" id="total-tasks">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-md card">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Completed</p>
+                        <p class="text-2xl font-bold" id="completed-tasks">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-md card">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Pending</p>
+                        <p class="text-2xl font-bold" id="pending-tasks">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-md card">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                        <i class="fas fa-exclamation-triangle text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Overdue</p>
+                        <p class="text-2xl font-bold" id="overdue-tasks">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Todo Form -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8 card">
+            <div class="flex flex-col md:flex-row gap-3">
+                <input 
+                    type="text" 
+                    id="new-todo-input"
+                    placeholder="What needs to be done?" 
+                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onkeypress="handleKeyPress(event)"
+                />
+                <select id="priority-select" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="low">Low Priority</option>
+                    <option value="medium" selected>Medium Priority</option>
+                    <option value="high">High Priority</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+                <button 
+                    onclick="addTodo()"
+                    class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition duration-200 pulse"
+                >
+                    <i class="fas fa-plus"></i>
+                    <span>Add Task</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Todo List -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden card">
+            <div class="border-b border-gray-200 p-4 bg-gray-50 flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-gray-800">Your Tasks</h2>
+                <div class="flex space-x-2">
+                    <select id="filter-status" onchange="applyFilters()" class="px-3 py-1 border border-gray-300 rounded text-sm">
+                        <option value="">All Tasks</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <select id="filter-priority" onchange="applyFilters()" class="px-3 py-1 border border-gray-300 rounded text-sm">
+                        <option value="">All Priorities</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="todo-list" class="divide-y divide-gray-200">
+                <div class="p-8 text-center text-gray-500" id="loading-message">
+                    <i class="fas fa-info-circle text-2xl mb-2"></i>
+                    <p>No tasks yet. Add your first task!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 relative">
+            <button onclick="closeModal('login-modal')" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-2xl font-bold mb-6 text-center">Account Access</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 mb-2">Email</label>
+                    <input type="email" id="login-email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com">
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">Password</label>
+                    <input type="password" id="login-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+                </div>
+                <button onclick="login()" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition duration-200">
+                    Sign In
+                </button>
+                <div class="text-center mt-4">
+                    <p>Don't have an account? <a href="#" onclick="showSignup()" class="text-blue-500 hover:underline">Sign Up</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signup-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 relative">
+            <button onclick="closeModal('signup-modal')" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-2xl font-bold mb-6 text-center">Create Account</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 mb-2">Name</label>
+                    <input type="text" id="signup-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your Name">
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">Email</label>
+                    <input type="email" id="signup-email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com">
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">Password</label>
+                    <input type="password" id="signup-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+                </div>
+                <button onclick="signup()" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg transition duration-200">
+                    Create Account
+                </button>
+                <div class="text-center mt-4">
+                    <p>Already have an account? <a href="#" onclick="showLogin()" class="text-blue-500 hover:underline">Sign In</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-12 text-center text-blue-100 text-sm">
+        <p>© 2026 TodoPro. All rights reserved. | Organize your life efficiently</p>
+    </footer>
+
+    <script>
+        // Use localStorage for storing tasks when backend is unavailable
+        const TODO_STORAGE_KEY = 'todoapp_tasks';
+        const AUTH_STORAGE_KEY = 'todoapp_auth';
+        
+        let currentUser = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || null);
+        let allTodos = JSON.parse(localStorage.getItem(TODO_STORAGE_KEY) || '[]');
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        
+        function initializeApp() {
+            updateUIBasedOnAuth();
+            loadTodos();
+            updateStats();
+        }
+        
+        function updateUIBasedOnAuth() {
+            const loginBtn = document.getElementById('login-btn');
+            const userInfo = document.getElementById('user-info');
+            
+            if (currentUser) {
+                loginBtn.style.display = 'none';
+                userInfo.style.display = 'flex';
+                document.getElementById('username-display').textContent = currentUser.name;
+            } else {
+                loginBtn.style.display = 'block';
+                userInfo.style.display = 'none';
+            }
+        }
+        
+        function showLoginModal() {
+            document.getElementById('signup-modal').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+        
+        function showSignupModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('signup-modal').classList.remove('hidden');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        function showLogin() {
+            document.getElementById('signup-modal').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+        
+        function showSignup() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('signup-modal').classList.remove('hidden');
+        }
+        
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // For demo purposes, accept any login
+            currentUser = {
+                id: 'demo-user-id',
+                email: email,
+                name: email.split('@')[0],
+                created_at: new Date().toISOString()
+            };
+            
+            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(currentUser));
+            closeModal('login-modal');
+            updateUIBasedOnAuth();
+        }
+        
+        function signup() {
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            
+            if (!name || !email || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // For demo purposes, create user
+            currentUser = {
+                id: 'demo-user-id-' + Date.now(),
+                email: email,
+                name: name,
+                created_at: new Date().toISOString()
+            };
+            
+            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(currentUser));
+            closeModal('signup-modal');
+            updateUIBasedOnAuth();
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                currentUser = null;
+                localStorage.removeItem(AUTH_STORAGE_KEY);
+                updateUIBasedOnAuth();
+            }
+        }
+        
+        function loadTodos() {
+            if (!currentUser) {
+                allTodos = [];
+                displayTodos([]);
+                return;
+            }
+            
+            // Load from localStorage
+            allTodos = JSON.parse(localStorage.getItem(TODO_STORAGE_KEY) || '[]');
+            displayTodos(allTodos);
+            updateStats();
+        }
+        
+        function updateStats() {
+            const total = allTodos.length;
+            const completed = allTodos.filter(todo => todo.completed).length;
+            const pending = total - completed;
+            const overdue = allTodos.filter(todo => {
+                if (todo.due_date && !todo.completed) {
+                    return new Date(todo.due_date) < new Date();
+                }
+                return false;
+            }).length;
+            
+            document.getElementById('total-tasks').textContent = total;
+            document.getElementById('completed-tasks').textContent = completed;
+            document.getElementById('pending-tasks').textContent = pending;
+            document.getElementById('overdue-tasks').textContent = overdue;
+        }
+        
+        function displayTodos(todos) {
+            const todoListElement = document.getElementById('todo-list');
+            
+            if (todos.length === 0) {
+                todoListElement.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fas fa-info-circle text-2xl mb-2"></i><p>No tasks yet. Add your first task!</p></div>';
+                return;
+            }
+            
+            todoListElement.innerHTML = '';
+            
+            todos.forEach(todo => {
+                const todoElement = document.createElement('div');
+                todoElement.className = `p-4 todo-item ${todo.completed ? 'completed bg-gray-50' : ''}`;
+                
+                // Format due date if present
+                const dueDateStr = todo.due_date ? new Date(todo.due_date).toLocaleDateString() : '';
+                const isOverdue = todo.due_date && !todo.completed && new Date(todo.due_date) < new Date();
+                
+                todoElement.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <button 
+                                onclick="toggleTodo('${todo.id}')"
+                                class="w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                                    todo.completed 
+                                        ? 'bg-green-500 border-green-500 text-white' 
+                                        : 'border-gray-300 hover:border-green-400'
+                                }"
+                            >
+                                ${todo.completed ? '<i class="fas fa-check text-xs"></i>' : ''}
+                            </button>
+                            
+                            <div>
+                                <h3 class="todo-title font-medium ${
+                                    todo.completed ? 'text-gray-500' : 'text-gray-800'
+                                }">
+                                    ${todo.title}
+                                </h3>
+                                ${todo.description ? `<p class="text-sm text-gray-600 mt-1">${todo.description}</p>` : ''}
+                                
+                                <div class="flex gap-3 mt-2 flex-wrap">
+                                    ${todo.priority ? `
+                                        <span class="priority-${todo.priority} text-xs px-2 py-1 rounded-full border">
+                                            <i class="fas fa-arrow-down mr-1"></i>${todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1)}
+                                        </span>
+                                    ` : ''}
+                                    
+                                    ${todo.category ? `
+                                        <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                                            <i class="fas fa-tag mr-1"></i>${todo.category}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button 
+                                onclick="editTodo('${todo.id}', '${todo.title.replace(/'/g, "\\'")}', '${todo.description ? todo.description.replace(/'/g, "\\'") : ''}', '${todo.priority}', '${todo.category || ''}')"
+                                class="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-full"
+                            >
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button 
+                                onclick="deleteTodo('${todo.id}')"
+                                class="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-full"
+                            >
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    ${todo.due_date ? `
+                        <div class="mt-2 text-sm ${
+                            isOverdue ? 'text-red-500 font-semibold' : 'text-gray-500'
+                        } flex items-center gap-1">
+                            <i class="far fa-calendar"></i>
+                            Due: ${dueDateStr}
+                            ${isOverdue ? '<span class="ml-1"><i class="fas fa-exclamation-circle"></i> Overdue</span>' : ''}
+                        </div>
+                    ` : ''}
+                `;
+                
+                todoListElement.appendChild(todoElement);
+            });
+        }
+        
+        function addTodo() {
+            const inputElement = document.getElementById('new-todo-input');
+            const prioritySelect = document.getElementById('priority-select');
+            
+            const title = inputElement.value.trim();
+            const priority = prioritySelect.value;
+            
+            if (!title) return;
+            
+            if (!currentUser) {
+                alert('Please log in to add tasks.');
+                showLoginModal();
+                return;
+            }
+            
+            const newTodo = {
+                id: 'todo_' + Date.now(),
+                title: title,
+                description: "",
+                completed: false,
+                priority: priority,
+                due_date: null,
+                category: "",
+                tags: [],
+                owner_id: currentUser.id,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            
+            allTodos.push(newTodo);
+            localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(allTodos));
+            
+            inputElement.value = '';
+            loadTodos(); // Reload todos
+        }
+        
+        function toggleTodo(id) {
+            if (!currentUser) {
+                alert('Please log in to update tasks.');
+                return;
+            }
+            
+            const todoIndex = allTodos.findIndex(todo => todo.id === id);
+            if (todoIndex !== -1) {
+                allTodos[todoIndex].completed = !allTodos[todoIndex].completed;
+                allTodos[todoIndex].updated_at = new Date().toISOString();
+                localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(allTodos));
+                loadTodos(); // Reload todos
+            }
+        }
+        
+        function deleteTodo(id) {
+            if (!currentUser) {
+                alert('Please log in to delete tasks.');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to delete this todo?')) {
+                return;
+            }
+            
+            allTodos = allTodos.filter(todo => todo.id !== id);
+            localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(allTodos));
+            loadTodos(); // Reload todos
+        }
+        
+        function editTodo(id, title, description, priority, category) {
+            if (!currentUser) {
+                alert('Please log in to edit tasks.');
+                return;
+            }
+
+            // Create a modal for editing
+            const editModalHtml = `
+                <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 relative">
+                        <button onclick="closeEditModal()" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                        <h3 class="text-2xl font-bold mb-6 text-center">Edit Task</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 mb-2">Title</label>
+                                <input type="text" id="edit-title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" value="${title}">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Description</label>
+                                <textarea id="edit-description" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3">${description}</textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Priority</label>
+                                    <select id="edit-priority" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="low" ${priority === 'low' ? 'selected' : ''}>Low</option>
+                                        <option value="medium" ${priority === 'medium' ? 'selected' : ''}>Medium</option>
+                                        <option value="high" ${priority === 'high' ? 'selected' : ''}>High</option>
+                                        <option value="urgent" ${priority === 'urgent' ? 'selected' : ''}>Urgent</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Category</label>
+                                    <input type="text" id="edit-category" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" value="${category}">
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="updateTodo('${id}')" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition duration-200">
+                                    Save Changes
+                                </button>
+                                <button onclick="closeEditModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg transition duration-200">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add the modal to the body
+            document.body.insertAdjacentHTML('beforeend', editModalHtml);
+        }
+
+        function updateTodo(id) {
+            if (!currentUser) {
+                alert('Please log in to update tasks.');
+                return;
+            }
+
+            const title = document.getElementById('edit-title').value;
+            const description = document.getElementById('edit-description').value;
+            const priority = document.getElementById('edit-priority').value;
+            const category = document.getElementById('edit-category').value;
+
+            if (!title) {
+                alert('Title is required');
+                return;
+            }
+
+            const todoIndex = allTodos.findIndex(todo => todo.id === id);
+            if (todoIndex !== -1) {
+                allTodos[todoIndex].title = title;
+                allTodos[todoIndex].description = description;
+                allTodos[todoIndex].priority = priority;
+                allTodos[todoIndex].category = category;
+                allTodos[todoIndex].updated_at = new Date().toISOString();
+                
+                localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(allTodos));
+                closeEditModal();
+                loadTodos(); // Reload todos
+            }
+        }
+        
+        function closeEditModal() {
+            const modal = document.getElementById('edit-modal');
+            if (modal) modal.remove();
+        }
+        
+        function applyFilters() {
+            const statusFilter = document.getElementById('filter-status').value;
+            const priorityFilter = document.getElementById('filter-priority').value;
+            
+            let filteredTodos = [...allTodos];
+            
+            if (statusFilter) {
+                if (statusFilter === 'active') {
+                    filteredTodos = filteredTodos.filter(todo => !todo.completed);
+                } else if (statusFilter === 'completed') {
+                    filteredTodos = filteredTodos.filter(todo => todo.completed);
+                }
+            }
+            
+            if (priorityFilter) {
+                filteredTodos = filteredTodos.filter(todo => todo.priority === priorityFilter);
+            }
+            
+            displayTodos(filteredTodos);
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                addTodo();
+            }
+        }
+        
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const loginModal = document.getElementById('login-modal');
+            const signupModal = document.getElementById('signup-modal');
+            const editModal = document.getElementById('edit-modal');
+
+            if (loginModal && !loginModal.classList.contains('hidden') && event.target === loginModal.parentElement) {
+                closeModal('login-modal');
+            }
+            if (signupModal && !signupModal.classList.contains('hidden') && event.target === signupModal.parentElement) {
+                closeModal('signup-modal');
+            }
+            if (editModal && event.target === editModal.parentElement) {
+                closeEditModal();
+            }
+        });
+        
+        // Also close modals with ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal('login-modal');
+                closeModal('signup-modal');
+                closeEditModal();
+            }
+        });
+    </script>
+</body>
+</html>
