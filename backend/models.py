@@ -1,7 +1,8 @@
 from sqlmodel import SQLModel, Field
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 import uuid
+from sqlalchemy import JSON
 
 # User Models
 class UserBase(SQLModel):
@@ -33,7 +34,7 @@ class TodoBase(SQLModel):
     priority: str = "medium"  # low, medium, high, urgent
     due_date: Optional[datetime] = None
     category: Optional[str] = None
-    tags: Optional[List[str]] = []
+    tags: Optional[str] = Field(default=lambda: "[]")  # Store as JSON string
 
 class Todo(TodoBase, table=True):
     __tablename__ = "todos"
@@ -59,7 +60,7 @@ class TodoUpdate(SQLModel):
     priority: Optional[str] = None
     due_date: Optional[datetime] = None
     category: Optional[str] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[str] = None
 
 # Category Models
 class CategoryBase(SQLModel):
