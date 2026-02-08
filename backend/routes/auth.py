@@ -1,30 +1,34 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlmodel import Session
 from typing import Optional
 import jwt
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from pydantic import BaseModel
+import os
+from dotenv import load_dotenv
 
 from models import User, UserCreate, UserRead
 from db import get_session
+
+load_dotenv()
 
 router = APIRouter()
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT settings
-SECRET_KEY = "your-secret-key-change-this-in-production"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+# JWT settings - using environment variable or default
+SECRET_KEY = os.getenv("SECRET_KEY", "your-super-secret-key-change-this-in-production")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    email: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: str
@@ -44,14 +48,46 @@ def authenticate_user(session: Session, email: str, password: str) -> Optional[U
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-def get_current_user(session: Session = Depends(get_session)):
-    # This is a simplified version - in a real app, you'd decode the JWT from headers
-    # and return the corresponding user
-    pass
+def get_current_user(request: Request, session: Session = Depends(get_session)):
+    token_str = request.headers.get("Authorization")
+    if not token_str or not token_str.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    token = token_str.split(" ")[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except jwt.JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user = session.query(User).filter(User.email == email).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return user
 
 @router.post("/auth/register", response_model=dict)
 def register(user: UserCreate, session: Session = Depends(get_session)):
@@ -86,7 +122,7 @@ def register(user: UserCreate, session: Session = Depends(get_session)):
     return {
         "success": True,
         "data": {
-            "user": UserRead.from_orm(db_user),
+            "user": UserRead.model_validate(db_user),
             "token": access_token
         }
     }
@@ -109,7 +145,7 @@ def login(credentials: UserLogin, session: Session = Depends(get_session)):
     return {
         "success": True,
         "data": {
-            "user": UserRead.from_orm(user),
+            "user": UserRead.model_validate(user),
             "token": access_token
         }
     }
@@ -117,4 +153,5 @@ def login(credentials: UserLogin, session: Session = Depends(get_session)):
 @router.post("/auth/logout")
 def logout():
     # In a real implementation, you might invalidate tokens here
+    # For now, we just return a success message
     return {"success": True, "message": "Logged out successfully"}

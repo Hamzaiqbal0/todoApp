@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TodoPro - Dashboard</title>
+    <title>TodoPro - All Tasks</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -60,14 +60,6 @@
         .nav-link.active::after {
             width: 80%;
         }
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
-        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -81,10 +73,10 @@
                 </div>
                 
                 <div class="hidden md:flex space-x-1">
-                    <a href="index.html" class="nav-link active">
+                    <a href="index.html" class="nav-link">
                         <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
-                    <a href="all-tasks.html" class="nav-link">
+                    <a href="all-tasks.html" class="nav-link active">
                         <i class="fas fa-tasks mr-2"></i>All Tasks
                     </a>
                     <a href="analytics.html" class="nav-link">
@@ -108,52 +100,9 @@
     </nav>
 
     <div class="container mx-auto px-4 py-8 max-w-6xl">
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-xl p-6 shadow-md card">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                        <i class="fas fa-tasks text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Total Tasks</p>
-                        <p class="text-2xl font-bold" id="total-tasks">0</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl p-6 shadow-md card">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                        <i class="fas fa-check-circle text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Completed</p>
-                        <p class="text-2xl font-bold" id="completed-tasks">0</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl p-6 shadow-md card">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
-                        <i class="fas fa-clock text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Pending</p>
-                        <p class="text-2xl font-bold" id="pending-tasks">0</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl p-6 shadow-md card">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4">
-                        <i class="fas fa-exclamation-triangle text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Overdue</p>
-                        <p class="text-2xl font-bold" id="overdue-tasks">0</p>
-                    </div>
-                </div>
-            </div>
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">All Tasks</h1>
+            <p class="text-blue-100">Manage all your tasks in one place</p>
         </div>
 
         <!-- Add Todo Form -->
@@ -174,7 +123,7 @@
                 </select>
                 <button 
                     onclick="addTodo()"
-                    class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition duration-200 pulse"
+                    class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition duration-200"
                 >
                     <i class="fas fa-plus"></i>
                     <span>Add Task</span>
@@ -185,7 +134,7 @@
         <!-- Todo List -->
         <div class="bg-white rounded-xl shadow-md overflow-hidden card">
             <div class="border-b border-gray-200 p-4 bg-gray-50 flex justify-between items-center">
-                <h2 class="text-xl font-semibold text-gray-800">Your Tasks</h2>
+                <h2 class="text-xl font-semibold text-gray-800">All Tasks</h2>
                 <div class="flex space-x-2">
                     <select id="filter-status" onchange="loadTodos()" class="px-3 py-1 border border-gray-300 rounded text-sm">
                         <option value="">All Tasks</option>
@@ -205,7 +154,7 @@
             <div id="todo-list" class="divide-y divide-gray-200">
                 <div class="p-8 text-center text-gray-500" id="loading-message">
                     <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                    <p>Loading your tasks...</p>
+                    <p>Loading all tasks...</p>
                 </div>
             </div>
         </div>
@@ -284,7 +233,6 @@
             
             if (authToken && currentUser) {
                 loadTodos();
-                loadStats();
             }
             // Don't automatically show login modal if not authenticated
             // User must click login button to access authentication
@@ -358,7 +306,6 @@
                     closeModal('login-modal');
                     updateUIBasedOnAuth();
                     loadTodos();
-                    loadStats();
                 } else {
                     alert('Login failed: ' + (data.error || 'Unknown error'));
                 }
@@ -399,7 +346,6 @@
                     closeModal('signup-modal');
                     updateUIBasedOnAuth();
                     loadTodos();
-                    loadStats();
                 } else {
                     alert('Signup failed: ' + (data.error || 'Unknown error'));
                 }
@@ -424,7 +370,6 @@
         
         async function loadTodos() {
             if (!authToken) {
-                // Redirect user to login instead of showing modal automatically
                 alert('Please log in to access your tasks.');
                 return;
             }
@@ -461,44 +406,6 @@
                 console.error('Error loading todos:', error);
                 document.getElementById('todo-list').innerHTML = '<div class="p-8 text-center text-red-500">Error connecting to server</div>';
             }
-        }
-        
-        async function loadStats() {
-            if (!authToken) return;
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/todos`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    const todos = data.data.todos || [];
-                    updateStats(todos);
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-        
-        function updateStats(todos) {
-            const total = todos.length;
-            const completed = todos.filter(todo => todo.completed).length;
-            const pending = total - completed;
-            const overdue = todos.filter(todo => {
-                if (todo.due_date && !todo.completed) {
-                    return new Date(todo.due_date) < new Date();
-                }
-                return false;
-            }).length;
-            
-            document.getElementById('total-tasks').textContent = total;
-            document.getElementById('completed-tasks').textContent = completed;
-            document.getElementById('pending-tasks').textContent = pending;
-            document.getElementById('overdue-tasks').textContent = overdue;
         }
         
         function displayTodos(todos) {
@@ -631,7 +538,6 @@
                 if (data.success) {
                     inputElement.value = '';
                     loadTodos(); // Reload todos
-                    loadStats(); // Reload stats
                 } else {
                     alert('Failed to add todo: ' + (data.error || 'Unknown error'));
                 }
@@ -660,7 +566,6 @@
                 
                 if (data.success) {
                     loadTodos(); // Reload todos
-                    loadStats(); // Reload stats
                 } else {
                     alert('Failed to update todo: ' + (data.error || 'Unknown error'));
                 }
@@ -693,7 +598,6 @@
                 
                 if (data.success) {
                     loadTodos(); // Reload todos
-                    loadStats(); // Reload stats
                 } else {
                     alert('Failed to delete todo: ' + (data.error || 'Unknown error'));
                 }
@@ -794,7 +698,6 @@
                 if (data.success) {
                     closeEditModal();
                     loadTodos(); // Reload todos
-                    loadStats(); // Reload stats
                 } else {
                     alert('Failed to update todo: ' + (data.error || 'Unknown error'));
                 }

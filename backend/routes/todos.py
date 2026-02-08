@@ -1,17 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlmodel import Session, select
 from typing import List, Optional
 from uuid import UUID
 import uuid
 from datetime import datetime
 
-from models import Todo, TodoCreate, TodoRead, TodoUpdate
+from models import Todo, TodoCreate, TodoRead, TodoUpdate, User
 from db import get_session
+from routes.auth import get_current_user
 
 router = APIRouter()
 
 @router.get("/todos", response_model=dict)
 def get_todos(
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     status_filter: Optional[str] = Query(None, alias="status"),
     priority: Optional[str] = Query(None),
@@ -22,7 +24,7 @@ def get_todos(
     page: Optional[int] = Query(1),
     limit: Optional[int] = Query(10)
 ):
-    query = select(Todo)
+    query = select(Todo).where(Todo.owner_id == current_user.id)
     
     # Apply filters
     if status_filter and status_filter != "all":
@@ -55,10 +57,10 @@ def get_todos(
     query = query.offset(offset).limit(limit)
     
     todos = session.exec(query).all()
-    todos_read = [TodoRead.from_orm(todo) for todo in todos]
+    todos_read = [TodoRead.model_validate(todo) for todo in todos]
     
     # Calculate total for pagination info
-    count_query = select(Todo)
+    count_query = select(Todo).where(Todo.owner_id == current_user.id)
     if status_filter and status_filter != "all":
         if status_filter == "active":
             count_query = count_query.where(Todo.completed == False)
@@ -90,7 +92,7 @@ def get_todos(
     }
 
 @router.get("/todos/{id}", response_model=dict)
-def get_todo(id: str, session: Session = Depends(get_session)):
+def get_todo(id: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
     try:
         todo_id = uuid.UUID(id)
     except ValueError:
@@ -100,19 +102,21 @@ def get_todo(id: str, session: Session = Depends(get_session)):
     if not todo:
         raise HTTPException(status_code=404, detail="Todo not found")
     
+    # Check if the todo belongs to the current user
+    if todo.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this todo")
+    
     return {
         "success": True,
         "data": {
-            "todo": TodoRead.from_orm(todo)
+            "todo": TodoRead.model_validate(todo)
         }
     }
 
 @router.post("/todos", response_model=dict)
-def create_todo(todo: TodoCreate, session: Session = Depends(get_session)):
-    # In a real app, we would get the authenticated user's ID
-    # For now, we'll use a placeholder
+def create_todo(todo: TodoCreate, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
     db_todo = Todo.model_validate(todo)
-    db_todo.owner_id = uuid.uuid4()  # Placeholder - should be from auth
+    db_todo.owner_id = current_user.id  # Associate with authenticated user
     
     session.add(db_todo)
     session.commit()
@@ -121,12 +125,12 @@ def create_todo(todo: TodoCreate, session: Session = Depends(get_session)):
     return {
         "success": True,
         "data": {
-            "todo": TodoRead.from_orm(db_todo)
+            "todo": TodoRead.model_validate(db_todo)
         }
     }
 
 @router.put("/todos/{id}", response_model=dict)
-def update_todo(id: str, todo_update: TodoUpdate, session: Session = Depends(get_session)):
+def update_todo(id: str, todo_update: TodoUpdate, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
     try:
         todo_id = uuid.UUID(id)
     except ValueError:
@@ -136,8 +140,12 @@ def update_todo(id: str, todo_update: TodoUpdate, session: Session = Depends(get
     if not db_todo:
         raise HTTPException(status_code=404, detail="Todo not found")
     
+    # Check if the todo belongs to the current user
+    if db_todo.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this todo")
+    
     # Update fields
-    update_data = todo_update.dict(exclude_unset=True)
+    update_data = todo_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_todo, field, value)
     
@@ -148,12 +156,12 @@ def update_todo(id: str, todo_update: TodoUpdate, session: Session = Depends(get
     return {
         "success": True,
         "data": {
-            "todo": TodoRead.from_orm(db_todo)
+            "todo": TodoRead.model_validate(db_todo)
         }
     }
 
 @router.patch("/todos/{id}/toggle", response_model=dict)
-def toggle_todo(id: str, session: Session = Depends(get_session)):
+def toggle_todo(id: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
     try:
         todo_id = uuid.UUID(id)
     except ValueError:
@@ -162,6 +170,10 @@ def toggle_todo(id: str, session: Session = Depends(get_session)):
     db_todo = session.get(Todo, todo_id)
     if not db_todo:
         raise HTTPException(status_code=404, detail="Todo not found")
+    
+    # Check if the todo belongs to the current user
+    if db_todo.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this todo")
     
     # Toggle completion status
     db_todo.completed = not db_todo.completed
@@ -174,12 +186,12 @@ def toggle_todo(id: str, session: Session = Depends(get_session)):
     return {
         "success": True,
         "data": {
-            "todo": TodoRead.from_orm(db_todo)
+            "todo": TodoRead.model_validate(db_todo)
         }
     }
 
 @router.delete("/todos/{id}")
-def delete_todo(id: str, session: Session = Depends(get_session)):
+def delete_todo(id: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
     try:
         todo_id = uuid.UUID(id)
     except ValueError:
@@ -188,6 +200,10 @@ def delete_todo(id: str, session: Session = Depends(get_session)):
     db_todo = session.get(Todo, todo_id)
     if not db_todo:
         raise HTTPException(status_code=404, detail="Todo not found")
+    
+    # Check if the todo belongs to the current user
+    if db_todo.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this todo")
     
     session.delete(db_todo)
     session.commit()
